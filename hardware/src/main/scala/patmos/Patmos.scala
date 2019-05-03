@@ -20,6 +20,7 @@ import argo._
 
 import scala.collection.immutable.Stream.Empty
 
+
 /**
  * Module for one Patmos core.
  */
@@ -60,7 +61,17 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
 
   decode.io.fedec <> fetch.io.fedec
   execute.io.decex <> decode.io.decex
-  memory.io.exmem <> execute.io.exmem
+
+  memory.io.exmem.rd(0).addr := execute.io.exmem.rd(0).addr
+  memory.io.exmem.rd(0).data := io.voterResult.data
+  memory.io.exmem.rd(0).valid := io.voterResult.valid
+
+  memory.io.exmem.mem <> execute.io.exmem.mem
+  memory.io.exmem.pc := execute.io.exmem.pc
+  memory.io.exmem.base := execute.io.exmem.base
+  memory.io.exmem.relPc := execute.io.exmem.relPc
+
+
   writeback.io.memwb <> memory.io.memwb
   // RF write connection
   decode.io.rfWrite <> writeback.io.rfWrite
@@ -68,6 +79,11 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
   // Take care that it is the plain register
   execute.io.exResult <> memory.io.exResult
   execute.io.memResult <> writeback.io.memResult
+
+
+
+  io.voterPort.data := execute.io.exmem.rd(0).data
+  io.voterPort.valid := execute.io.exmem.rd(0).valid
 
   // Connect stack cache
   execute.io.exsc <> dcache.io.scIO.exsc
@@ -180,6 +196,7 @@ object PatmosCoreMain {
   }
 }
 
+
 /**
  * The main (top-level) component of Patmos.
  */
@@ -204,6 +221,11 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
   println("Config cmp: ")
   val MAX_IO_DEVICES = 16
   val cmpdevs = new Array[Module](MAX_IO_DEVICES)
+
+  val voterDataReg  = Vec(nrCores, Reg(Bits(width = DATA_WIDTH)))
+  
+
+  
   
   for(dev <- cmpDevices) {
     println(dev)
@@ -219,19 +241,26 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
       case "S4noc" => cmpdevs(7) = Module(new cmp.S4nocOCPWrapper(nrCores, 4, 4))
       case "CASPM" => cmpdevs(8) = Module(new cmp.CASPM(nrCores, nrCores * 8))
       case "AsyncLock" => cmpdevs(9) = Module(new cmp.AsyncLock(nrCores, nrCores * 2))
-      case "UartCmp" => cmpdevs(10) = Module(new cmp.UartCmp(nrCores,CLOCK_FREQ,115200,16))
+      case "VotedUartCmp" => cmpdevs(10) = Module(new cmp.VotedUartCmp(nrCores,CLOCK_FREQ,115200,16))
       case "TwoWay" => cmpdevs(11) = Module(new cmp.TwoWayOCPWrapper(nrCores, 1024))
       case "TransactionalMemory" => cmpdevs(12) = Module(new cmp.TransactionalMemory(nrCores, 512))
       case "LedsCmp" => cmpdevs(13) = Module(new cmp.LedsCmp(nrCores, 1))
+      case "Voter" => cmpdevs(14) = Module(new cmp.VoterCmp(nrCores))                     
       case _ =>
     }
   }
-  
+
+ 
+
+
+
   for(dev <- cmpdevs) {
     if(dev != null) {
       Config.connectIOPins(dev.getClass.getSimpleName, io, dev.io, "cmp.")
     }
   }
+
+ 
 
   for (i <- (0 until nrCores)) {
 
@@ -244,17 +273,18 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
     when(dumio.M.Cmd =/= OcpCmd.IDLE) {
       dumrespReg := OcpResp.ERR
     }
-
+    
     val cmpdevios = Vec(cmpdevs.map(e => 
       if(e == null)
         dumio
       else
         e.io match {
-          case cmpio: cmp.CmpIO => cmpio.cores(i)
+          case cmpio: cmp.CmpIO => cmpio.cores(i)                   
           case _ => e.io.asInstanceOf[Vec[OcpCoreSlavePort]](i)
         }
+    
       ))
-
+  
     var addr = cores(i).io.comSpm.M.Addr(ADDR_WIDTH-1-12, ADDR_WIDTH-1-12-util.log2Up(MAX_IO_DEVICES)+1)
 
     val addrReg = RegInit(addr)
@@ -262,10 +292,19 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
 
     cores(i).io.comSpm.S := cmpdevios(addrReg).S
 
+    
+
     for(j <- 0 until cmpdevios.length) {
       cmpdevios(j).M := cores(i).io.comSpm.M
       cmpdevios(j).M.Cmd := Mux(addr === Bits(j), cores(i).io.comSpm.M.Cmd, OcpCmd.IDLE)
     }
+
+    // VOTER
+    val voter = cmpdevs(14).asInstanceOf[cmp.VoterCmp] 
+    voter.io.voterCmpPins.resultDataReg(i) := cores(i).io.voterPort
+    cores(i).io.voterResult := voter.io.voterCmpPins.outputDataReg(i)
+    // VOTER
+
 
     // TODO: maybe a better way is for all interfaces to have the bits 'superMode' and 'flags'
     // e.g., all IO devices should be possible to have interrupts

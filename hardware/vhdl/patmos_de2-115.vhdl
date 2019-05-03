@@ -53,10 +53,12 @@ architecture rtl of patmos_top is
 			io_comSpm_S_Resp        : in std_logic_vector(1 downto 0);
 			io_comSpm_S_Data        : in std_logic_vector(31 downto 0);
 
-			io_ledsPins_led : out std_logic_vector(8 downto 0);
-			io_keysPins_key : in  std_logic_vector(3 downto 0);
-			io_uartPins_tx  : out std_logic;
-			io_uartPins_rx  : in  std_logic;
+			--io_voterPins_bit : out std_logic_vector(2 downto 0);
+			-- io_ledsPins_led  : out std_logic_vector(8 downto 0);
+			io_ledsCmpPins_led : out std_logic_vector(2 downto 0);
+			-- io_keysPins_key : in  std_logic_vector(3 downto 0);
+			io_votedUartCmpPins_tx  : out std_logic;
+			io_votedUartCmpPins_rx  : in  std_logic;
 
             io_sramCtrlPins_ramOut_addr : out std_logic_vector(19 downto 0);
             io_sramCtrlPins_ramOut_doutEna : out std_logic;
@@ -91,7 +93,24 @@ architecture rtl of patmos_top is
 	attribute altera_attribute : string;
 	attribute altera_attribute of res_cnt : signal is "POWER_UP_LEVEL=LOW";
 
+	signal led_pinscmp : std_logic_vector(2 downto 0);
+
+
+	signal leds_pins    : std_logic_vector(8 downto 0);
+	signal voter_pins : std_logic_vector(2 downto 0);
 begin
+
+	oLedsPins_led(0) <= led_pinscmp(0);
+	oLedsPins_led(1) <= led_pinscmp(1);
+	oLedsPins_led(2) <= led_pinscmp(2);
+	oLedsPins_led(3) <= '0';
+	oLedsPins_led(4) <= '0';
+	oLedsPins_led(5) <= '0';
+	oLedsPins_led(6) <= '0';
+	oLedsPins_led(7) <= '0';
+	oLedsPins_led(8) <= '0';
+
+
 	pll_inst : entity work.pll generic map(
 			input_freq  => pll_infreq,
 			multiply_by => pll_mult,
@@ -135,9 +154,11 @@ begin
            open, open, open, open, open,
            (others => '0'), (others => '0'), '0',
            open, open, open, open,
-           (others => '0'), (others => '0'),
-           oLedsPins_led,
-           iKeysPins_key,
+					 (others => '0'), (others => '0'),
+					 --voter_pins,
+					 --leds_pins,
+           led_pinscmp,
+           --iKeysPins_key,
            oUartPins_txd, iUartPins_rxd,
            oSRAM_A, sram_out_dout_ena, SRAM_DQ, sram_out_dout, oSRAM_CE_N, oSRAM_OE_N, oSRAM_WE_N, oSRAM_LB_N, oSRAM_UB_N);
 

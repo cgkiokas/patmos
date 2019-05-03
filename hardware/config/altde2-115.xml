@@ -11,23 +11,32 @@
   </CmpDevs>
   -->
 
+	<pipeline dual="false" />
+	<cores count="3"/>
+
+	<CmpDevs>
+	<CmpDev name="VotedUartCmp" />
+	<CmpDev name="LedsCmp" />
+	<CmpDev name="Voter" />
+	</CmpDevs> 
+
   <ExtMem size="2M" DevTypeRef="Sram16" />
   <!-- <ExtMem size="500k" DevTypeRef="OCRam" /> -->
 
   <IOs>
-	<IO DevTypeRef="Uart" offset="8"/>
-	<IO DevTypeRef="Leds" offset="9"/>
-	<IO DevTypeRef="Keys" offset="10" intrs="2,3,4,5"/>
-  </IOs>
+	<!-- <IO DevTypeRef="Uart" offset="8"/> -->
+	<!-- <IO DevTypeRef="Leds" offset="9"/>
+	<IO DevTypeRef="Keys" offset="10" intrs="2,3,4,5"/> -->
+  </IOs> 
 
   <Devs>
-  	<Dev DevType="Uart" entity="Uart" iface="OcpCore">
+  	<!-- <Dev DevType="Uart" entity="Uart" iface="OcpCore">
   	  <params>
   		<param name="baudRate" value="115200"/>
   		<param name="fifoDepth" value="16"/>
   	  </params>
-  	</Dev>
-  	<Dev DevType="Leds" entity="Leds" iface="OcpCore">
+  	</Dev> -->
+  	<!-- <Dev DevType="Leds" entity="Leds" iface="OcpCore">
   	  <params>
   		<param name="ledCount" value="9"/>
   	  </params>
@@ -36,7 +45,7 @@
   	  <params>
   		<param name="keyCount" value="4"/>
   	  </params>
-  	</Dev>
+  	</Dev> -->
 	<Dev DevType="Sram16" entity="SRamCtrl" iface="OcpBurst">
 	    <params>
 		<param name="ocpAddrWidth" value="21" />
