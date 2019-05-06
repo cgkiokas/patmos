@@ -53,6 +53,7 @@ architecture rtl of patmos_top is
 			io_comSpm_S_Resp        : in std_logic_vector(1 downto 0);
 			io_comSpm_S_Data        : in std_logic_vector(31 downto 0);
 
+			io_fault								: out std_logic;
 			--io_voterPins_bit : out std_logic_vector(2 downto 0);
 			-- io_ledsPins_led  : out std_logic_vector(8 downto 0);
 			io_ledsCmpPins_led : out std_logic_vector(2 downto 0);
@@ -98,6 +99,8 @@ architecture rtl of patmos_top is
 
 	signal leds_pins    : std_logic_vector(8 downto 0);
 	signal voter_pins : std_logic_vector(2 downto 0);
+
+	signal fault : std_logic;
 begin
 
 	oLedsPins_led(0) <= led_pinscmp(0);
@@ -108,8 +111,9 @@ begin
 	oLedsPins_led(5) <= '0';
 	oLedsPins_led(6) <= '0';
 	oLedsPins_led(7) <= '0';
-	oLedsPins_led(8) <= '0';
+	oLedsPins_led(8) <= fault;
 
+	
 
 	pll_inst : entity work.pll generic map(
 			input_freq  => pll_infreq,
@@ -127,7 +131,7 @@ begin
 	--	internal reset generation
 	--	should include the PLL lock signal
 	--
-	process(clk_int)
+	process(clk_int,fault)
 	begin
 		if rising_edge(clk_int) then
 			if (res_cnt /= "111") then
@@ -157,6 +161,7 @@ begin
 					 (others => '0'), (others => '0'),
 					 --voter_pins,
 					 --leds_pins,
+					 fault,
            led_pinscmp,
            --iKeysPins_key,
            oUartPins_txd, iUartPins_rxd,

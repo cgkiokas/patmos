@@ -12,7 +12,7 @@ import Chisel._
 
 import Constants._
 
-class Execute() extends Module {
+class Execute(nr : Int) extends Module {
   val io = IO(new ExecuteIO())
 
   val exReg = Reg(new DecEx())
@@ -23,6 +23,20 @@ class Execute() extends Module {
       exReg.relPc := io.decex.relPc
     }
   }
+
+  val result = Reg(init = UInt(0, DATA_WIDTH))
+
+  
+  
+  val randomNum = LFSR16(true.B) 
+  
+  
+  
+
+
+  val countReg =  Reg(init = UInt(0, DATA_WIDTH))
+  countReg := countReg + 1.U
+      
 
   def alu(func: Bits, op1: UInt, op2: UInt): UInt = {
     val result = Wire(UInt(width = DATA_WIDTH))
@@ -287,12 +301,24 @@ class Execute() extends Module {
       }
     }
 
+    
+    val stopCnt = countReg > 500000000.U
+    //val stopCnt = countReg === 5.U
+    // when(stopCnt){
+    //   result := randomNum
+    // }.otherwise{
+    //   result := Mux(exReg.aluOp(i).isMFS, mfsResult,
+    //                            Mux(exReg.aluOp(i).isBCpy, bcpyResult,
+    //                                aluResult))
+    // }
+
     // result
     io.exmem.rd(i).addr := exReg.rdAddr(i)
     io.exmem.rd(i).valid := exReg.wrRd(i) && doExecute(i)
-    io.exmem.rd(i).data := Mux(exReg.aluOp(i).isMFS, mfsResult,
-                               Mux(exReg.aluOp(i).isBCpy, bcpyResult,
-                                   aluResult))
+    // io.exmem.rd(i).data := Mux(exReg.aluOp(i).isMFS, mfsResult,
+    //                            Mux(exReg.aluOp(i).isBCpy, bcpyResult,
+    //                                aluResult))
+    io.exmem.rd(i).data := Mux(stopCnt, (nr.U), Mux(exReg.aluOp(i).isMFS, mfsResult, Mux(exReg.aluOp(i).isBCpy, bcpyResult, aluResult)))
   }
 
   // load/store

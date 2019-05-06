@@ -14,6 +14,7 @@ object VoterCmp {
       // val outputDataReg  = Vec.fill(3) {Bits(OUTPUT,DATA_WIDTH)}
       val resultDataReg  = Vec.fill(3) {new VoterResult().asInput}
       val outputDataReg  = Vec.fill(3) {new VoterResult().asOutput}
+      val fault  = Bits(OUTPUT, 1)
     }
   }
 
@@ -25,25 +26,23 @@ class VoterCmp(nrCores: Int) extends Module {
 
 
   //val voterDev = (Module(new VoterIO()).io)
-  val res = Bits(width = DATA_WIDTH)
+  
+  
+  val res = (io.voterCmpPins.resultDataReg(0).data & io.voterCmpPins.resultDataReg(1).data) |
+             (io.voterCmpPins.resultDataReg(0).data & io.voterCmpPins.resultDataReg(2).data) |   
+             (io.voterCmpPins.resultDataReg(1).data & io.voterCmpPins.resultDataReg(2).data)
 
-  val countReg = Reg(init = UInt(0, 32))
-  countReg := countReg + UInt(1)
-  when(countReg === 500000.U){
-     res := (io.voterCmpPins.resultDataReg(0).data & 42.U) |
-            (io.voterCmpPins.resultDataReg(0).data & 32.U) |   
-            (42.U & 32.U)
+  // voterDev.voterIOPins.input := res
 
+  when (res === 0.U)
+  {
+    io.voterCmpPins.fault := 1.U
   }.otherwise
   {
-     res := (io.voterCmpPins.resultDataReg(0).data & io.voterCmpPins.resultDataReg(1).data) |
-              (io.voterCmpPins.resultDataReg(0).data & io.voterCmpPins.resultDataReg(2).data) |   
-              (io.voterCmpPins.resultDataReg(1).data & io.voterCmpPins.resultDataReg(2).data)
+    io.voterCmpPins.fault := 0.U
   }
-
-
-
   
+
   val valid = io.voterCmpPins.resultDataReg(0).valid & io.voterCmpPins.resultDataReg(1).valid & io.voterCmpPins.resultDataReg(2).valid
   //Wire one device IO device per core
   for (i <- 0 until nrCores) {

@@ -35,7 +35,8 @@ object VoterIO  {
   trait Pins 
   {
     val voterIOPins = new Bundle() {
-      val resultData  = Bits(INPUT, DATA_WIDTH)
+      val fault  = Bits(OUTPUT, DATA_WIDTH)
+      val input = Bits(INPUT, DATA_WIDTH)
     }
   }
 }
@@ -47,8 +48,8 @@ class VoterIO() extends CoreDevice() {
   val voterReg = Reg(init = Bits(0, DATA_WIDTH))
 
   // Default response
-  val respReg = Reg(init = OcpResp.NULL)
-  respReg := OcpResp.NULL
+  // val respReg = Reg(init = OcpResp.NULL)
+  // respReg := OcpResp.NULL
 
   // Write 
   // when(io.ocp.M.Cmd === OcpCmd.WR) {
@@ -57,16 +58,18 @@ class VoterIO() extends CoreDevice() {
   // }
 
   // Read
-  when(io.ocp.M.Cmd === OcpCmd.RD) {
-    respReg := OcpResp.DVA
-  }
+  // when(io.ocp.M.Cmd === OcpCmd.RD) {
+  //   respReg := OcpResp.DVA
+  // }
 
   // Connections to master
-  io.ocp.S.Resp := respReg
-  io.ocp.S.Data := voterReg
+  // io.ocp.S.Resp := respReg
+  // io.ocp.S.Data := voterReg
 
   // Connection to pins
   //voterReg := io.ocp.M.Data(DATA_WIDTH-1, 0)
-  voterReg := io.voterIOPins.resultData 
-  //resultDataReg := Reg(next = voterReg)
+  voterReg := io.voterIOPins.input 
+
+  io.voterIOPins.fault := Reg(next = voterReg)
+
 }

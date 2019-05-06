@@ -46,7 +46,7 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
 
   val fetch = Module(new Fetch(binFile))
   val decode = Module(new Decode())
-  val execute = Module(new Execute())
+  val execute = Module(new Execute(nr))
   val memory = Module(new Memory())
   val writeback = Module(new WriteBack())
   val exc = Module(new Exceptions())
@@ -303,8 +303,9 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
     val voter = cmpdevs(14).asInstanceOf[cmp.VoterCmp] 
     voter.io.voterCmpPins.resultDataReg(i) := cores(i).io.voterPort
     cores(i).io.voterResult := voter.io.voterCmpPins.outputDataReg(i)
+    io.fault := voter.io.voterCmpPins.fault
     // VOTER
-
+    
 
     // TODO: maybe a better way is for all interfaces to have the bits 'superMode' and 'flags'
     // e.g., all IO devices should be possible to have interrupts
