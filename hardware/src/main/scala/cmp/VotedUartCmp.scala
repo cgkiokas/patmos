@@ -1,7 +1,7 @@
 /*
- * A multicore Uart wrapper
+ * A Uart wrapper with voting for Lockstep multicore
  *
- * Author: Torur Biskopsto Strom (torur.strom@gmail.com)
+ * Author: Christos Gkiokas (gkiokasc@gmail.com)
  */
 
 package cmp
@@ -21,67 +21,53 @@ object VotedUartCmp {
   }
 }
 
-// class CmpIO(corecnt : Int) extends Bundle
-// {
-//   val cores = Vec(corecnt, new OcpCoreSlavePort(ADDR_WIDTH, DATA_WIDTH))
-
-//   override def clone = new CmpIO(corecnt).asInstanceOf[this.type]
-// }
 
 class VotedUartCmp(corecnt: Int, clk_freq: Int, baud_rate: Int, fifoDepth: Int) extends Module {
 
   val io = new CmpIO(corecnt) with VotedUartCmp.Pins
   
+  //connect voted uart to existing uart component
   val uart = Module(new Uart(clk_freq,baud_rate,fifoDepth))
-  
   io.votedUartCmpPins <> uart.io.uartPins
 
-//     val Cmd = Bits(width = 3)
-//   val Addr = Bits(width = addrWidth)
-//   val Data = Bits(width = dataWidth)
-// val res = (a & b |
-//             (a & c |   
-//             (b & c)
+  //Vote on the incoming ocp signals
+  val votedCmd = (io.cores(0).M.Cmd & io.cores(1).M.Cmd) | 
+                  (io.cores(0).M.Cmd & io.cores(2).M.Cmd) |
+                  (io.cores(1).M.Cmd & io.cores(2).M.Cmd)
+
+  val votedAddr = (io.cores(0).M.Addr & io.cores(1).M.Addr) | 
+                  (io.cores(0).M.Addr & io.cores(2).M.Addr) |
+                  (io.cores(1).M.Addr & io.cores(2).M.Addr)
+
+  val votedData = (io.cores(0).M.Data & io.cores(1).M.Data) | 
+                  (io.cores(0).M.Data & io.cores(2).M.Data) |
+                  (io.cores(1).M.Data & io.cores(2).M.Data)
+
+  val votedEn = (io.cores(0).M.ByteEn & io.cores(1).M.ByteEn) | 
+                  (io.cores(0).M.ByteEn & io.cores(2).M.ByteEn) |
+                  (io.cores(1).M.ByteEn & io.cores(2).M.ByteEn)
+
+  //Inject the voted results into normal uart
+  uart.io.ocp.M.Cmd := votedCmd
+  uart.io.ocp.M.Addr := votedAddr
+  uart.io.ocp.M.Data := votedData
+  uart.io.ocp.M.ByteEn := votedEn
   
 
-    //uart.io.ocp.M := PriorityMux(io.cores.map(e => (e.M.Cmd =/= OcpCmd.IDLE, e.M)))
+  val cmdReg = Reg(init = Bool(false))
 
-    val votedCmd = (io.cores(0).M.Cmd & io.cores(1).M.Cmd) | 
-                    (io.cores(0).M.Cmd & io.cores(2).M.Cmd) |
-                    (io.cores(1).M.Cmd & io.cores(2).M.Cmd)
+  when(votedCmd =/= OcpCmd.IDLE) {
+      cmdReg := Bool(true)
+  }.elsewhen(uart.io.ocp.S.Resp === OcpResp.DVA) {
+      cmdReg := Bool(false)
+  }
 
-    val votedAddr = (io.cores(0).M.Addr & io.cores(1).M.Addr) | 
-                    (io.cores(0).M.Addr & io.cores(2).M.Addr) |
-                    (io.cores(1).M.Addr & io.cores(2).M.Addr)
-
-    val votedData = (io.cores(0).M.Data & io.cores(1).M.Data) | 
-                    (io.cores(0).M.Data & io.cores(2).M.Data) |
-                    (io.cores(1).M.Data & io.cores(2).M.Data)
-
-    val votedEn = (io.cores(0).M.ByteEn & io.cores(1).M.ByteEn) | 
-                    (io.cores(0).M.ByteEn & io.cores(2).M.ByteEn) |
-                    (io.cores(1).M.ByteEn & io.cores(2).M.ByteEn)
-
-
-    uart.io.ocp.M.Cmd := votedCmd
-    uart.io.ocp.M.Addr := votedAddr
-    uart.io.ocp.M.Data := votedData
-    uart.io.ocp.M.ByteEn := votedEn
-    
-
-    val cmdReg = Reg(init = Bool(false))
-
-    when(votedCmd =/= OcpCmd.IDLE) {
-        cmdReg := Bool(true)
-    }.elsewhen(uart.io.ocp.S.Resp === OcpResp.DVA) {
-        cmdReg := Bool(false)
-    }
-
-    for (i <- 0 until corecnt) {    
-        io.cores(i).S.Data := uart.io.ocp.S.Data
-        io.cores(i).S.Resp := uart.io.ocp.S.Resp
-        when(cmdReg =/= Bool(true)) {
-            io.cores(i).S.Resp := OcpResp.NULL
-        }
-    }
+  //TODO: Rx part
+  for (i <- 0 until corecnt) {    
+      io.cores(i).S.Data := uart.io.ocp.S.Data
+      io.cores(i).S.Resp := uart.io.ocp.S.Resp
+      when(cmdReg =/= Bool(true)) {
+          io.cores(i).S.Resp := OcpResp.NULL
+      }
+  }
 }

@@ -449,6 +449,7 @@ class MMUIO() extends Bundle() {
   val phys = new OcpBurstMasterPort(EXTMEM_ADDR_WIDTH, DATA_WIDTH, BURST_LENGTH)
 }
 
+//Voter result i/o
 class VoterResult() extends Bundle() {
   val data = Bits(width = DATA_WIDTH)
   val valid = Bool()
@@ -463,8 +464,8 @@ class PatmosCoreIO() extends Bundle() {
   val comConf = new OcpNIMasterPort(ADDR_WIDTH, DATA_WIDTH)
   val comSpm = new OcpCoreMasterPort(ADDR_WIDTH, DATA_WIDTH)
   val memPort = new OcpBurstMasterPort(EXTMEM_ADDR_WIDTH, DATA_WIDTH, BURST_LENGTH)
-  val voterPort = new VoterResult().asOutput
-  val voterResult = new VoterResult().asInput
+  val voterPort = new VoterResult().asOutput  //port for the voter output
+  val voterResult = new VoterResult().asInput //voter result return
 }
 
 
@@ -472,7 +473,7 @@ class PatmosCoreIO() extends Bundle() {
 class PatmosIO() extends Bundle() {
   val comConf = new OcpNIMasterPort(ADDR_WIDTH, DATA_WIDTH)
   val comSpm = new OcpCoreMasterPort(ADDR_WIDTH, DATA_WIDTH)
-  val fault  = Bits(OUTPUT, 1)
+  val fault  = Bits(OUTPUT, 1) //propagating the fault signal outside for the demo
 }
 
 

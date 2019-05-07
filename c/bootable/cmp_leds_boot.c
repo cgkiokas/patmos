@@ -1,9 +1,10 @@
 /*
-    This is a multicore test program that can be compiled as bootable
-    into the ROM.
+    This is a bootable test program used as test
+    for the lockstep project. Executes on all cores
+    and switches three leds as well as write to the uart
+    the state of the led.
 
-    Author: 
-    Copyright: DTU, BSD License
+    Author: Christos Gkiokas
 */
 
 #include "include/bootable.h"

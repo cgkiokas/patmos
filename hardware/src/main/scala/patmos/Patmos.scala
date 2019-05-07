@@ -62,6 +62,7 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
   decode.io.fedec <> fetch.io.fedec
   execute.io.decex <> decode.io.decex
 
+  //Voter split and connect
   memory.io.exmem.rd(0).addr := execute.io.exmem.rd(0).addr
   memory.io.exmem.rd(0).data := io.voterResult.data
   memory.io.exmem.rd(0).valid := io.voterResult.valid
@@ -221,10 +222,7 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
   println("Config cmp: ")
   val MAX_IO_DEVICES = 16
   val cmpdevs = new Array[Module](MAX_IO_DEVICES)
-
-  val voterDataReg  = Vec(nrCores, Reg(Bits(width = DATA_WIDTH)))
   
-
   
   
   for(dev <- cmpDevices) {
@@ -244,8 +242,8 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
       case "VotedUartCmp" => cmpdevs(10) = Module(new cmp.VotedUartCmp(nrCores,CLOCK_FREQ,115200,16))
       case "TwoWay" => cmpdevs(11) = Module(new cmp.TwoWayOCPWrapper(nrCores, 1024))
       case "TransactionalMemory" => cmpdevs(12) = Module(new cmp.TransactionalMemory(nrCores, 512))
-      case "LedsCmp" => cmpdevs(13) = Module(new cmp.LedsCmp(nrCores, 1))
-      case "Voter" => cmpdevs(14) = Module(new cmp.VoterCmp(nrCores))                     
+      case "LedsCmp" => cmpdevs(13) = Module(new cmp.LedsCmp(nrCores, 1)) 
+      case "Voter" => cmpdevs(14) = Module(new cmp.VoterCmp(nrCores))                    
       case _ =>
     }
   }
@@ -299,10 +297,10 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
       cmpdevios(j).M.Cmd := Mux(addr === Bits(j), cores(i).io.comSpm.M.Cmd, OcpCmd.IDLE)
     }
 
-    // VOTER
-    val voter = cmpdevs(14).asInstanceOf[cmp.VoterCmp] 
-    voter.io.voterCmpPins.resultDataReg(i) := cores(i).io.voterPort
-    cores(i).io.voterResult := voter.io.voterCmpPins.outputDataReg(i)
+    // VOTER Connection
+    val voter = cmpdevs(14).asInstanceOf[cmp.VoterCmp]
+    voter.io.voterCmpPins.resultData(i) := cores(i).io.voterPort
+    cores(i).io.voterResult := voter.io.voterCmpPins.outputData(i)
     io.fault := voter.io.voterCmpPins.fault
     // VOTER
     
