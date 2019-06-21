@@ -165,8 +165,8 @@ class DecEx() extends Bundle() {
 
 class Result() extends Bundle() {
   val addr = Bits(width = REG_BITS)
-  val data = Bits(width = DATA_WIDTH)
-  val valid = Bool()
+  var data = Bits(width = DATA_WIDTH)
+  var valid = Bool()
 
   def flush() = {
     valid := Bool(false)
@@ -449,23 +449,13 @@ class MMUIO() extends Bundle() {
   val phys = new OcpBurstMasterPort(EXTMEM_ADDR_WIDTH, DATA_WIDTH, BURST_LENGTH)
 }
 
-//Voter result i/o
-class VoterResult() extends Bundle() {
-  val data = Bits(width = DATA_WIDTH)
-  val valid = Bool()
-
-  def flush() = {
-    valid := Bool(false)
-  }
-}
 
 class PatmosCoreIO() extends Bundle() {
   val superMode = Bool(OUTPUT)
   val comConf = new OcpNIMasterPort(ADDR_WIDTH, DATA_WIDTH)
   val comSpm = new OcpCoreMasterPort(ADDR_WIDTH, DATA_WIDTH)
   val memPort = new OcpBurstMasterPort(EXTMEM_ADDR_WIDTH, DATA_WIDTH, BURST_LENGTH)
-  val voterPort = new VoterResult().asOutput  //port for the voter output
-  val voterResult = new VoterResult().asInput //voter result return
+  val fault  = Bits(OUTPUT, 1)
 }
 
 

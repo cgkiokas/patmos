@@ -55,6 +55,7 @@ abstract class Config {
   val frequency: Int
   val pipeCount: Int
   val coreCount: Int
+  val tmr: Boolean
   val cmpDevices: Set[String]
   val burstLength: Int
   val writeCombine: Boolean
@@ -191,6 +192,8 @@ object Config {
       val coreCount = getIntAttr(node, "cores", "@count",
                                  hasParent, defaultConf.coreCount)
 
+      val tmr = getBooleanAttr(node, "tmr","@enable", hasParent, defaultConf.tmr)
+       
       val cmpDevices = {
         val set = ((node \ "CmpDevs") \ "CmpDev").map(e => (e \ "@name").text).toSet
         if(set.isEmpty) defaultConf.cmpDevices else set
@@ -307,6 +310,7 @@ object Config {
     val frequency = 0
     val pipeCount = 0
     val coreCount = 0
+    val tmr = false
     val cmpDevices = Set[String]()
     val burstLength = 0
     val writeCombine = false

@@ -55,11 +55,11 @@ architecture rtl of patmos_top is
 
 			io_fault								: out std_logic;
 			--io_voterPins_bit : out std_logic_vector(2 downto 0);
-			-- io_ledsPins_led  : out std_logic_vector(8 downto 0);
-			io_ledsCmpPins_led : out std_logic_vector(2 downto 0);
+			io_ledsPins_led  : out std_logic_vector(8 downto 0);
+			--io_ledsCmpPins_led : out std_logic_vector(2 downto 0);
 			-- io_keysPins_key : in  std_logic_vector(3 downto 0);
-			io_votedUartCmpPins_tx  : out std_logic;
-			io_votedUartCmpPins_rx  : in  std_logic;
+			io_uartPins_tx  : out std_logic;
+			io_uartPins_rx  : in  std_logic;
 
             io_sramCtrlPins_ramOut_addr : out std_logic_vector(19 downto 0);
             io_sramCtrlPins_ramOut_doutEna : out std_logic;
@@ -160,9 +160,10 @@ begin
            open, open, open, open,
 					 (others => '0'), (others => '0'),
 					 --voter_pins,
-					 --leds_pins,
 					 fault,
-           led_pinscmp,
+					 leds_pins,
+					 
+           --led_pinscmp,
            --iKeysPins_key,
            oUartPins_txd, iUartPins_rxd,
            oSRAM_A, sram_out_dout_ena, SRAM_DQ, sram_out_dout, oSRAM_CE_N, oSRAM_OE_N, oSRAM_WE_N, oSRAM_LB_N, oSRAM_UB_N);

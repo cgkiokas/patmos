@@ -18,7 +18,7 @@ import datacache._
 import ocp.{OcpCoreSlavePort, _}
 import argo._
 
-import scala.collection.immutable.Stream.Empty
+
 
 
 /**
@@ -46,7 +46,7 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
 
   val fetch = Module(new Fetch(binFile))
   val decode = Module(new Decode())
-  val execute = Module(new Execute(nr))
+  val execute = Module(new Execute())
   val memory = Module(new Memory())
   val writeback = Module(new WriteBack())
   val exc = Module(new Exceptions())
@@ -61,18 +61,7 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
 
   decode.io.fedec <> fetch.io.fedec
   execute.io.decex <> decode.io.decex
-
-  //Voter split and connect
-  memory.io.exmem.rd(0).addr := execute.io.exmem.rd(0).addr
-  memory.io.exmem.rd(0).data := io.voterResult.data
-  memory.io.exmem.rd(0).valid := io.voterResult.valid
-
-  memory.io.exmem.mem <> execute.io.exmem.mem
-  memory.io.exmem.pc := execute.io.exmem.pc
-  memory.io.exmem.base := execute.io.exmem.base
-  memory.io.exmem.relPc := execute.io.exmem.relPc
-
-
+  memory.io.exmem <> execute.io.exmem
   writeback.io.memwb <> memory.io.memwb
   // RF write connection
   decode.io.rfWrite <> writeback.io.rfWrite
@@ -80,11 +69,6 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
   // Take care that it is the plain register
   execute.io.exResult <> memory.io.exResult
   execute.io.memResult <> writeback.io.memResult
-
-
-
-  io.voterPort.data := execute.io.exmem.rd(0).data
-  io.voterPort.valid := execute.io.exmem.rd(0).valid
 
   // Connect stack cache
   execute.io.exsc <> dcache.io.scIO.exsc
@@ -162,9 +146,9 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
   iocomp.io.internalIO.perf.sc := dcache.io.scPerf
   iocomp.io.internalIO.perf.wc := dcache.io.wcPerf
   iocomp.io.internalIO.perf.mem.read := (io.memPort.M.Cmd === OcpCmd.RD &&
-    io.memPort.S.CmdAccept === Bits(1))
+    io.memPort.S.CmdAccept === UInt(1))
   iocomp.io.internalIO.perf.mem.write := (io.memPort.M.Cmd === OcpCmd.WR &&
-    io.memPort.S.CmdAccept === Bits(1))
+    io.memPort.S.CmdAccept === UInt(1))
 
   // The inputs and outputs
   io.comConf <> iocomp.io.comConf
@@ -174,27 +158,9 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
 
   // Keep signal alive for debugging
   debug(enableReg)
-}
 
-/**
- * This is only used by aegean to strip off the memory
- * controller. Shall go with the new CMP configuration.
- */
-object PatmosCoreMain {
-  def main(args: Array[String]): Unit = {
-
-    val chiselArgs = args.slice(3, args.length)
-    val configFile = args(0)
-    val binFile = args(1)
-    val datFile = args(2)
-
-    Config.loadConfig(configFile)
-    Config.minPcWidth = util.log2Up((new File(binFile)).length.toInt / 4)
-    Config.datFile = datFile
-    chiselMain(chiselArgs, () => Module(new PatmosCore(binFile, 0, 0, true)))
-    // Print out the configuration
-    Utility.printConfig(configFile)
-  }
+  //Ground fault signal for non-lockstep
+  io.fault := 0.U
 }
 
 
@@ -206,16 +172,24 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
   Config.minPcWidth = util.log2Up((new File(binFile)).length.toInt / 4)
   Config.datFile = datFile
 
+
   val io = Config.getPatmosIO()
 
   val nrCores = Config.getConfig.coreCount
+
+  val tmr = Config.getConfig.tmr
 
   val aegeanMode = !Config.getConfig.cmpDevices.contains("Argo")
 
   println("Config core count: " + nrCores)
 
+
   // Instantiate cores
-  val cores = (0 until nrCores).map(i => Module(new PatmosCore(binFile, i, nrCores, aegeanMode)))
+  val cores = {(0 until nrCores).map(i =>  if(true) Module(new PatmosCoreLockstep(binFile, i, nrCores, aegeanMode))
+                                          else Module(new PatmosCore(binFile, i, nrCores, aegeanMode)))}
+
+
+  //val cores = {(0 until nrCores).map(i =>  Module(new PatmosCoreLockstep(binFile, i, nrCores, aegeanMode)))}
 
   // Forward ports to/from core
   val cmpDevices = Config.getConfig.cmpDevices
@@ -243,7 +217,7 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
       case "TwoWay" => cmpdevs(11) = Module(new cmp.TwoWayOCPWrapper(nrCores, 1024))
       case "TransactionalMemory" => cmpdevs(12) = Module(new cmp.TransactionalMemory(nrCores, 512))
       case "LedsCmp" => cmpdevs(13) = Module(new cmp.LedsCmp(nrCores, 1)) 
-      case "Voter" => cmpdevs(14) = Module(new cmp.VoterCmp(nrCores))                    
+      //case "Voter" => cmpdevs(14) = Module(new cmp.VoterCmp(nrCores))
       case _ =>
     }
   }
@@ -298,10 +272,10 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
     }
 
     // VOTER Connection
-    val voter = cmpdevs(14).asInstanceOf[cmp.VoterCmp]
-    voter.io.voterCmpPins.resultData(i) := cores(i).io.voterPort
-    cores(i).io.voterResult := voter.io.voterCmpPins.outputData(i)
-    io.fault := voter.io.voterCmpPins.fault
+    // val voter = cmpdevs(14).asInstanceOf[cmp.VoterCmp]
+    // voter.io.voterCmpPins.resultData(i) := cores(i).io.voterPort
+    // cores(i).io.voterResult := voter.io.voterCmpPins.outputData(i)
+    // io.fault := voter.io.voterCmpPins.fault
     // VOTER
     
 
