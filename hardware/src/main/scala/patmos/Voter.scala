@@ -1,0 +1,5 @@
+package patmos
+
+class Voter {
+
+}
