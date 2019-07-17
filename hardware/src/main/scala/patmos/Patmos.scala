@@ -213,7 +213,7 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
       case "S4noc" => cmpdevs(7) = Module(new cmp.S4nocOCPWrapper(nrCores, 4, 4))
       case "CASPM" => cmpdevs(8) = Module(new cmp.CASPM(nrCores, nrCores * 8))
       case "AsyncLock" => cmpdevs(9) = Module(new cmp.AsyncLock(nrCores, nrCores * 2))
-      case "VotedUartCmp" => cmpdevs(10) = Module(new cmp.VotedUartCmp(nrCores,CLOCK_FREQ,115200,16))
+      case "UartCmp" => cmpdevs(10) = Module(new cmp.UartCmp(nrCores,CLOCK_FREQ,115200,16))
       case "TwoWay" => cmpdevs(11) = Module(new cmp.TwoWayOCPWrapper(nrCores, 1024))
       case "TransactionalMemory" => cmpdevs(12) = Module(new cmp.TransactionalMemory(nrCores, 512))
       case "LedsCmp" => cmpdevs(13) = Module(new cmp.LedsCmp(nrCores, 1)) 
@@ -236,6 +236,8 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
 
   for (i <- (0 until nrCores)) {
 
+    //debug fault
+    io.fault := cores(i).io.fault
     // Dummy device for empty indexes
     var dumio = new OcpCoreSlavePort(ADDR_WIDTH, DATA_WIDTH)
     dumio.S.Data := UInt(0)

@@ -110,7 +110,7 @@ class Fetch(fileName : String) extends Module {
   val pc_inc = Mux(pc_next(0), pc_next2, pc_next)
   addrEven := addrEvenReg
   addrOdd := addrOddReg
-  when(io.ena && !reset) {
+  when(io.ena && !reset && !io.fault_flag) {
     addrEven := Cat((pc_inc)(PC_SIZE - 1, 1), Bits(0)).toUInt
     addrOdd := Cat((pc_next)(PC_SIZE - 1, 1), Bits(1)).toUInt
     pcReg := pc_next

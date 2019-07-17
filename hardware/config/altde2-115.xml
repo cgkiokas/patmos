@@ -16,7 +16,6 @@
 	<tmr enable="true" />
 
 	<!-- <CmpDevs>
-	<CmpDev name="VotedUartCmp" />
 	<CmpDev name="LedsCmp" />
 	<CmpDev name="Voter" />
 	</CmpDevs>  -->

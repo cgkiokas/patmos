@@ -103,9 +103,9 @@ architecture rtl of patmos_top is
 	signal fault : std_logic;
 begin
 
-	oLedsPins_led(0) <= led_pinscmp(0);
-	oLedsPins_led(1) <= led_pinscmp(1);
-	oLedsPins_led(2) <= led_pinscmp(2);
+	oLedsPins_led(0) <= leds_pins(0);
+	oLedsPins_led(1) <= leds_pins(1);
+	oLedsPins_led(2) <= leds_pins(2);
 	oLedsPins_led(3) <= '0';
 	oLedsPins_led(4) <= '0';
 	oLedsPins_led(5) <= '0';

@@ -55,6 +55,10 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
 //  override val iocomp = Module(new InOut(nr, cnt, aegeanCompatible))
 //  override val dcache = Module(new DataCache())
 
+  val voter = Module(new Voter())
+
+
+
   val fetch_1 = Module(new Fetch(binFile))
   val decode_1 = Module(new Decode())
   val execute_1 = Module(new Execute())
@@ -71,9 +75,9 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   val exc_2 = Module(new Exceptions())
   val dcache_2 = Module(new DataCache())
 
+
+
   //connect icache
-
-
   icache.io.feicache.addrOdd := fetch_1.io.feicache.addrOdd
   icache.io.feicache.addrEven := fetch_1.io.feicache.addrEven
 
@@ -89,6 +93,16 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   fetch_1.io.icachefe.reloc := icache.io.icachefe.reloc
   fetch_1.io.icachefe.relPc := icache.io.icachefe.relPc
 
+
+  fetch_2.io.icachefe.base := icache.io.icachefe.base
+  fetch_2.io.icachefe.instrEven := icache.io.icachefe.instrEven
+  fetch_2.io.icachefe.instrOdd := icache.io.icachefe.instrOdd
+  fetch_2.io.icachefe.memSel := icache.io.icachefe.memSel
+  fetch_2.io.icachefe.relBase := icache.io.icachefe.relBase
+  fetch_2.io.icachefe.reloc := icache.io.icachefe.reloc
+  fetch_2.io.icachefe.relPc := icache.io.icachefe.relPc
+
+
   icache.io.exicache.callRetAddr := execute_1.io.exicache.callRetAddr
   icache.io.exicache.callRetBase := execute_1.io.exicache.callRetBase
   icache.io.exicache.doCallRet := execute_1.io.exicache.doCallRet
@@ -97,7 +111,11 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   icache.io.exicache.callRetBase := execute_2.io.exicache.callRetBase
   icache.io.exicache.doCallRet := execute_2.io.exicache.doCallRet
 
+  fetch.io.fault_flag := voter.io.fault
+  fetch_1.io.fault_flag := voter.io.fault
+  fetch_2.io.fault_flag := voter.io.fault
 
+  io.fault := voter.io.fault
 
   decode_1.io.fedec <> fetch_1.io.fedec
   execute_1.io.decex <> decode_1.io.decex
@@ -106,9 +124,13 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
 
 //Voter connect
   memory.io.exmem.rd(0).addr := execute.io.exmem.rd(0).addr
-  val votedResult = voter(execute.io.exmem.rd(0),execute_1.io.exmem.rd(0),execute_2.io.exmem.rd(0))
-  memory.io.exmem.rd(0).data := votedResult.data
-  memory.io.exmem.rd(0).valid := votedResult.valid
+
+  voter.io.a := execute.io.exmem.rd(0)
+  voter.io.b := execute_1.io.exmem.rd(0)
+  voter.io.c := execute_2.io.exmem.rd(0)
+
+  memory.io.exmem.rd(0).data := voter.io.votedResult.data
+  memory.io.exmem.rd(0).valid := voter.io.votedResult.valid
 
 
   memory.io.exmem.mem.addr := execute_1.io.exmem.mem.addr
@@ -272,10 +294,10 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   // Flush signal
 
   decode_1.io.flush := flush || brflush
-  execute_1.io.flush := flush
+  execute_1.io.flush := flush || voter.io.fault
 
-  decode_2.io.flush := flush || brflush
-  execute_2.io.flush := flush
+  decode_2.io.flush := flush || brflush || voter.io.fault
+  execute_2.io.flush := flush || voter.io.fault
 
   // Software resets
   icache.io.invalidate := exc_1.io.invalICache
@@ -311,26 +333,5 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   debug(enableReg)
 
 
-  //Voter logic result = a and b or a and c or b and c
-  def voter( a:Result, b:Result, c:Result ): Result = {
-      val res = new Result()
 
-      //Vote on result data
-      res.data = (a.data & b.data) |
-                (a.data & c.data) |
-                (b.data & c.data)
-
-      //Synchronize on data valid signal
-      res.valid = a.valid & b.valid & c.valid
-
-      when (res.data === 0.U)
-      {
-        io.fault := 1.U
-      }.otherwise
-      {
-        io.fault := 0.U
-      }
-
-      return res
-   }
 }

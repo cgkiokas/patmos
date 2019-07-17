@@ -289,6 +289,8 @@ class FetchIO extends Bundle() {
   // connections to instruction cache
   val feicache = new FeICache().asOutput
   val icachefe = new ICacheFe().asInput
+  //val voter connection
+  val fault_flag = Bool(INPUT)
 }
 
 class ExcDec() extends Bundle() {
@@ -498,4 +500,13 @@ class PerfCounterIO() extends Bundle() {
 
 class InternalIO() extends Bundle() {
   val perf = new PerfCounterIO()
+}
+
+class VoterIO() extends Bundle()
+{
+  val a = new Result().asInput()
+  val b = new Result().asInput()
+  val c = new Result().asInput()
+  val votedResult = new Result().asOutput()
+  val fault = Bool(OUTPUT)
 }

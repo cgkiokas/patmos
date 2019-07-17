@@ -13,8 +13,10 @@
 
 // main() is executed by all cores in parallel
 int main() {
-    volatile _IODEV int *uart_ptr = (volatile _IODEV int *) PATMOS_IO_VUARTCMP;
-    volatile _IODEV int *led_ptr = (volatile _IODEV int *) PATMOS_IO_LEDSCMP;
+    //volatile _IODEV int *uart_ptr = (volatile _IODEV int *) PATMOS_IO_VUARTCMP;
+    //volatile _IODEV int *led_ptr = (volatile _IODEV int *) PATMOS_IO_LEDSCMP;
+    volatile _IODEV int *uart_ptr = (volatile _IODEV int *) PATMOS_IO_UART;
+    volatile _IODEV int *led_ptr = (volatile _IODEV int *) PATMOS_IO_LED;
     volatile _IODEV int *us_ptr = (volatile _IODEV int *) (PATMOS_IO_TIMER+12);
 
 
