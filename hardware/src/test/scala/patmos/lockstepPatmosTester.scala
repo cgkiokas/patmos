@@ -14,17 +14,17 @@ class lockstepPatmosTester(pat: Patmos) extends Tester(pat) {
     // The PC printout is a little off on a branch
     val pc = peek(pat.cores(0).memory.io.memwb.pc) - 2
     print(pc + " - ")
-    for (j <- 0 until 32)
-      print(peek(pat.cores(0).decode.rf.rf(UInt(j))) + " ")
+    //for (j <- 0 until 32)
+      //print(peek(pat.cores(0).decode.rf.rf(UInt(j))) + " ")
     println()
   }
 }
 
 object lockstepPatmosTester extends App {
-  private val pathToVCD = "generated/" + this.getClass.getSimpleName.dropRight(1)
-  private val nameOfVCD = this.getClass.getSimpleName.dropRight(7) + ".vcd"
 
   override def main(args: Array[String]): Unit = {
+    val pathToVCD = "generated/lockstepPatmosTester"
+    val nameOfVCD = "Patmos.vcd"
 
     val chiselArgs = Array("--genHarness", "--test", "--backend", "c",
       "--compile", "--vcd", "--targetDir", "generated/" + this.getClass.getSimpleName.dropRight(1))
@@ -33,9 +33,7 @@ object lockstepPatmosTester extends App {
     val datFile = args(2)
 
     chiselMainTest(chiselArgs, () => Module(new Patmos(configFile, binFile, datFile))) { pat => new lockstepPatmosTester(pat) }
+
+    "gtkwave " + pathToVCD + "/" + nameOfVCD + " " + pathToVCD + "/" + "view.sav" !
   }
-
-
-
-  "gtkwave " + pathToVCD + "/" + nameOfVCD + " " + pathToVCD + "/" + "view.sav" !
 }
