@@ -22,10 +22,13 @@ class Voter extends Module{
 
   io.votedResult := res
 
+  //
   //Error detection ~A and B and C or A and ~B and C or A and B and ~C
-  val err_detect = !io.a.data & io.b.data & io.c.data |
-                   io.a.data & !io.b.data & io.c.data |
-                   io.a.data & io.b.data & !io.c.data
+//  val err_detect = !io.a.data & io.b.data & io.c.data |
+//                   io.a.data & !io.b.data & io.c.data |
+//                   io.a.data & io.b.data & !io.c.data
+
+  val err_detect = io.a.data =/= io.b.data =/= io.c.data
 
   when (err_detect === 1.U)
   {

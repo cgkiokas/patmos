@@ -57,9 +57,10 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
 
   val voter = Module(new Voter())
 
+  var testBinFile = "/home/patmos/t-crest/patmos/tmp/bootable-bootloader.bin"
+  var testBinFile2= "/home/patmos/t-crest/patmos/tmp/bootable-blinking.bin"
 
-
-  val fetch_1 = Module(new Fetch(binFile))
+  val fetch_1 = Module(new Fetch(testBinFile))
   val decode_1 = Module(new Decode())
   val execute_1 = Module(new Execute())
 
@@ -67,7 +68,7 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   val exc_1 = Module(new Exceptions())
   val dcache_1 = Module(new DataCache())
 
-  val fetch_2 = Module(new Fetch(binFile))
+  val fetch_2 = Module(new Fetch(testBinFile2))
   val decode_2 = Module(new Decode())
   val execute_2 = Module(new Execute())
 
