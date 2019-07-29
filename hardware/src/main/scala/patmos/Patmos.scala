@@ -70,6 +70,8 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
   execute.io.exResult <> memory.io.exResult
   execute.io.memResult <> writeback.io.memResult
 
+  fetch.io.pc_reset := execute.io.exmem.pc
+
   // Connect stack cache
   execute.io.exsc <> dcache.io.scIO.exsc
   dcache.io.scIO.scex <> execute.io.scex
@@ -92,6 +94,8 @@ class PatmosCore(binFile: String, nr: Int, cnt: Int, aegeanCompatible: Boolean) 
 
   // Connect data cache
   dcache.io.master <> memory.io.globalInOut
+
+
 
   // Merge OCP ports from data caches and method cache
   val burstBus = Module(new OcpBurstBus(ADDR_WIDTH, DATA_WIDTH, BURST_LENGTH))

@@ -23,11 +23,6 @@ class Execute() extends Module {
       exReg.relPc := io.decex.relPc
     }
   }
-
-  //Error injection utilities
-  //val randomNum = LFSR16(true.B) 
-  //val countReg =  Reg(init = UInt(0, DATA_WIDTH))
-  //countReg := countReg + 1.U
       
 
   def alu(func: Bits, op1: UInt, op2: UInt): UInt = {
@@ -293,8 +288,6 @@ class Execute() extends Module {
       }
     }
 
-    //Count to error cycle
-    //val stopCnt = countReg > 500000000.U
 
     // result
     io.exmem.rd(i).addr := exReg.rdAddr(i)
@@ -302,8 +295,7 @@ class Execute() extends Module {
     io.exmem.rd(i).data := Mux(exReg.aluOp(i).isMFS, mfsResult,
                                 Mux(exReg.aluOp(i).isBCpy, bcpyResult,
                                     aluResult))
-    //Replaced the default Mux with error injection
-    //io.exmem.rd(i).data := Mux(stopCnt, (randomNum + nr.U), Mux(exReg.aluOp(i).isMFS, mfsResult, Mux(exReg.aluOp(i).isBCpy, bcpyResult, aluResult)))
+
   }
 
   // load/store

@@ -60,7 +60,7 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   var testBinFile = "/home/patmos/t-crest/patmos/tmp/bootable-bootloader.bin"
   var testBinFile2= "/home/patmos/t-crest/patmos/tmp/bootable-blinking.bin"
 
-  val fetch_1 = Module(new Fetch(testBinFile))
+  val fetch_1 = Module(new Fetch(binFile))
   val decode_1 = Module(new Decode())
   val execute_1 = Module(new Execute())
 
@@ -133,6 +133,7 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   memory.io.exmem.rd(0).data := voter.io.votedResult.data
   memory.io.exmem.rd(0).valid := voter.io.votedResult.valid
 
+  memory.io.fault := voter.io.fault
 
   memory.io.exmem.mem.addr := execute_1.io.exmem.mem.addr
   memory.io.exmem.mem.brcf := execute_1.io.exmem.mem.brcf
@@ -177,6 +178,10 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
 
   memory.io.exmem.pc := execute_1.io.exmem.pc
   memory.io.exmem.pc := execute_2.io.exmem.pc
+
+  fetch_1.io.pc_reset := execute_1.io.exmem.pc
+  fetch_2.io.pc_reset := execute_2.io.exmem.pc
+
 
   memory.io.exmem.base := execute_1.io.exmem.base
   memory.io.exmem.base := execute_2.io.exmem.base
@@ -295,10 +300,10 @@ class PatmosCoreLockstep( binFile: String,nr: Int, cnt: Int, aegeanCompatible: B
   // Flush signal
 
   decode_1.io.flush := flush || brflush
-  execute_1.io.flush := flush || voter.io.fault
+  execute_1.io.flush := flush
 
-  decode_2.io.flush := flush || brflush || voter.io.fault
-  execute_2.io.flush := flush || voter.io.fault
+  decode_2.io.flush := flush || brflush
+  execute_2.io.flush := flush
 
   // Software resets
   icache.io.invalidate := exc_1.io.invalICache

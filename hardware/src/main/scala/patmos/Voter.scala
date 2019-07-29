@@ -7,30 +7,24 @@ import Chisel._
 
 class Voter extends Module{
   val io = IO(new VoterIO())
-
+  val res = new Result()
+  val err_detect = Bool()
 
   //Voter logic result = A and B or A and C or B and C
-  val res = new Result()
-
   //Vote on result data
   res.data = (io.a.data & io.b.data) |
              (io.a.data & io.c.data) |
              (io.b.data & io.c.data)
 
   //Synchronize on data valid signal
-  res.valid = io.a.valid & io.b.valid & io.c.valid
+  res.valid = io.b.valid & io.c.valid & io.a.valid
 
   io.votedResult := res
 
-  //
-  //Error detection ~A and B and C or A and ~B and C or A and B and ~C
-//  val err_detect = !io.a.data & io.b.data & io.c.data |
-//                   io.a.data & !io.b.data & io.c.data |
-//                   io.a.data & io.b.data & !io.c.data
+  //non-recoverable error detection
+  err_detect := io.a.data =/= io.b.data & io.a.data =/= io.c.data & io.b.data =/= io.c.data
 
-  val err_detect = io.a.data =/= io.b.data =/= io.c.data
-
-  when (err_detect === 1.U)
+  when (err_detect === true.B )
   {
     io.fault := true.B
   }.otherwise

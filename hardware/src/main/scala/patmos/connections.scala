@@ -291,6 +291,7 @@ class FetchIO extends Bundle() {
   val icachefe = new ICacheFe().asInput
   //val voter connection
   val fault_flag = Bool(INPUT)
+  val pc_reset = UInt(INPUT,width = PC_SIZE)
 }
 
 class ExcDec() extends Bundle() {
@@ -360,6 +361,7 @@ class MemoryIO() extends Bundle() {
   val ena_out = Bool(OUTPUT)
   val ena_in = Bool(INPUT)
   val flush = Bool(OUTPUT)
+  val fault = Bool(INPUT)
   val exmem = new ExMem().asInput
   val memwb = new MemWb().asOutput
   val memfe = new MemFe().asOutput

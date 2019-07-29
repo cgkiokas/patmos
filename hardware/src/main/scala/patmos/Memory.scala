@@ -30,7 +30,7 @@ class Memory() extends Module {
   val flush = (memReg.mem.xcall || memReg.mem.trap ||
                ((memReg.mem.call || memReg.mem.ret ||
                  memReg.mem.brcf || memReg.mem.xret) && memReg.mem.nonDelayed) ||
-               memReg.mem.illOp || illMemReg)
+               memReg.mem.illOp || illMemReg || io.fault)
   io.flush := flush
 
   // Stall logic
