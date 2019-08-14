@@ -189,7 +189,7 @@ class Patmos(configFile: String, binFile: String, datFile: String) extends Modul
 
 
   // Instantiate cores
-  val cores = {(0 until nrCores).map(i =>  if(true) Module(new PatmosCoreLockstep(binFile, i, nrCores, aegeanMode))
+  val cores = {(0 until nrCores).map(i =>  if(tmr) Module(new PatmosCoreLockstep(binFile, i, nrCores, aegeanMode))
                                           else Module(new PatmosCore(binFile, i, nrCores, aegeanMode)))}
 
 
